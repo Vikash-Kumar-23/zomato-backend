@@ -4,7 +4,10 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
 async function getCurrentSession(req, res) {
-    const token = req.cookies && req.cookies.token;
+    const authorization = req.headers && req.headers.authorization;
+    const token = authorization && authorization.startsWith('Bearer ')
+        ? authorization.substring('Bearer '.length)
+        : req.cookies && req.cookies.token;
     if (!token) return res.status(401).json({ message: 'Not logged in' });
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -42,7 +45,7 @@ async function registerUser(req, res) {
             id: newUser._id,
         },process.env.JWT_SECRET)
         res.cookie("token", token, { httpOnly: true, sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax', secure: process.env.NODE_ENV === 'production' });
-        res.status(201).json({ success: true, message: 'User registered successfully',
+        res.status(201).json({ success: true, message: 'User registered successfully', token,
             user:{
                 _id:newUser._id,
                 fullName: newUser.fullName,
@@ -73,7 +76,7 @@ async function loginUser(req, res) {
             id: user._id,
         },process.env.JWT_SECRET)
         res.cookie("token", token, { httpOnly: true, sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax', secure: process.env.NODE_ENV === 'production' });
-        res.status(200).json({ success: true, message: 'User logged in successfully',
+        res.status(200).json({ success: true, message: 'User logged in successfully', token,
             user:{
                 _id:user._id,
                 fullName: user.fullName,
